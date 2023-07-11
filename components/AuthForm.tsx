@@ -32,7 +32,9 @@ export default function AuthForm() {
 	const onSubmit: SubmitHandler<FieldValues> = (data) => {
 		setIsLoading(true)
 		if (variant === 'REGISTER') {
-			axios.post('/api/register', data)
+			axios.post('/api/register', data).finally(() => {
+				setIsLoading(false)
+			})
 		}
 		if (variant === 'LOGIN') {
 		}
