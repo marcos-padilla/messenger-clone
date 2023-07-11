@@ -1,3 +1,4 @@
+import AuthProvider from '@/context/AuthProvider'
 import ToasterContext from '@/context/ToasterContext'
 import '@/styles/globals.css'
 import type { Metadata } from 'next'
@@ -15,8 +16,10 @@ export default function RootLayout({
 	return (
 		<html lang='en'>
 			<body>
-				<ToasterContext />
-				{children}
+				<AuthProvider>
+					<ToasterContext />
+					{children}
+				</AuthProvider>
 			</body>
 		</html>
 	)
