@@ -7,15 +7,30 @@ import Button from './Button'
 import AuthSocialButton from './AuthSocialButton'
 import { BsGithub, BsGoogle } from 'react-icons/bs'
 import axios from 'axios'
+import { toast } from 'react-hot-toast'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 type Variant = 'LOGIN' | 'REGISTER'
 
 export default function AuthForm() {
 	const [variant, setVariant] = useState<Variant>('LOGIN')
 	const [isLoading, setIsLoading] = useState(false)
+	const router = useRouter()
 
 	const toggleVariant = useCallback(() => {
 		setVariant((prev) => (prev === 'LOGIN' ? 'REGISTER' : 'LOGIN'))
 	}, [variant])
+
+	const handleCallback = useCallback((callback: any) => {
+		if (callback?.error) {
+			toast.error('Invalid credentials!')
+		}
+
+		if (callback?.ok && !callback?.error) {
+			/* router.push('/conversations') */
+			toast.success('Logged in')
+		}
+	}, [])
 
 	const {
 		register,
@@ -32,17 +47,39 @@ export default function AuthForm() {
 	const onSubmit: SubmitHandler<FieldValues> = (data) => {
 		setIsLoading(true)
 		if (variant === 'REGISTER') {
-			axios.post('/api/register', data).finally(() => {
-				setIsLoading(false)
-			})
+			axios.post('/api/register', data)
+				.then(() =>
+					signIn('credentials', {
+						...data,
+						redirect: false,
+					})
+				)
+				.then(handleCallback)
+				.catch((e) => {
+					toast.error(e.response.data)
+				})
+				.finally(() => {
+					setIsLoading(false)
+				})
 		}
 		if (variant === 'LOGIN') {
+			signIn('credentials', {
+				...data,
+				redirect: false,
+			})
+				.then(handleCallback)
+				.finally(() => {
+					setIsLoading(false)
+				})
 		}
 	}
 	const socialAction = (action: string) => {
 		setIsLoading(true)
-
-		//Next Auth social sign in
+		signIn(action, {
+			redirect: false,
+		})
+			.then(handleCallback)
+			.finally(() => setIsLoading(false))
 	}
 
 	return (
