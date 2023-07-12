@@ -4,10 +4,11 @@ import useOtherUser from '@/hooks/useOtherUser'
 import { Transition, Dialog } from '@headlessui/react'
 import { Conversation, User } from '@prisma/client'
 import { format } from 'date-fns'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { IoClose, IoTrash } from 'react-icons/io5'
 import Avatar from '../Avatar'
 import AvatarGroup from '../AvatarGroup'
+import ConfirmDeleteModal from '../modals/ConfirmDeleteModal'
 
 interface ProfileDrawerProps {
 	conversation: Conversation & {
@@ -28,114 +29,14 @@ interface ProfileDrawerDialogProps {
 	joinedDate: string
 }
 
-const ProfileDrawerDialog = ({
-	onClose,
-	otherUser,
-	title,
-	statusText,
-	conversation,
-	joinedDate,
-}: ProfileDrawerDialogProps) => {
-	return <div>Hello World</div>
-	/*return (
-		 <Dialog.Panel className='pointer-events-auto w-screen max-w-md'>
-			<div className='flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl'>
-				<div className='px-4 sm:px-6'>
-					<div className='flex items-start justify-end'>
-						<div className='ml-3 flex h-7 items-center'>
-							<button
-								type='button'
-								className='rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2'
-								onClick={onClose}
-							>
-								<span className='sr-only'>
-									Close panel
-								</span>
-								<IoClose size={24} />
-							</button>
-						</div>
-					</div>
-				</div>
-				<div className='relative mt-6 flex-1 px-4 sm:px-6'>
-					<div className='flex flex-col items-center'>
-						<div className='mb-2'>
-							<Avatar user={otherUser} />
-						</div>
-						<div className=''>{title}</div>
-						<div className='text-sm text-gray-500'>
-							{statusText}
-						</div>
-						<div className='flex gap-10 my-8'>
-							<button
-								onClick={() => {}}
-								className='flex flex-col gap-3 items-center cursor-pointer hover:opacity-75'
-							>
-								<div className='w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center'>
-									<IoTrash size={20} />
-								</div>
-								<span className='text-sm font-light text-neutral-600'>
-									Delete
-								</span>
-							</button>
-						</div>
-						<div className='w-full pb-5 pt-5 sm:px-0 sm:pt-0'>
-							<dl className='space-y-8 px-4 sm:space-y-6 sm:px-6'>
-								{conversation.isGroup ? (
-									<div>
-										<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
-											Emails
-										</dt>
-										<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
-											{conversation.users
-												.map(
-													(user) =>
-														user.email
-												)
-												.join(', ')}
-										</dd>
-									</div>
-								) : (
-									<>
-										<div>
-											<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
-												Email
-											</dt>
-											<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
-												{otherUser.email}
-											</dd>
-										</div>
-										<hr />
-										<div>
-											<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
-												Joined
-											</dt>
-											<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
-												<time
-													dateTime={
-														joinedDate
-													}
-												>
-													{joinedDate}
-												</time>
-											</dd>
-										</div>
-									</>
-								)}
-							</dl>
-						</div>
-					</div>
-				</div>
-			</div>
-		</Dialog.Panel> 
-	)*/
-}
-
 export default function ProfileDrawer({
 	conversation,
 	isOpen,
 	onClose,
 }: ProfileDrawerProps) {
 	const otherUser = useOtherUser(conversation)
+	const [confirmOpen, setConfirmOpen] = useState(false)
+
 	const joinedDate = useMemo(() => {
 		return format(new Date(otherUser.createdAt), 'PP')
 	}, [otherUser.createdAt])
@@ -151,163 +52,178 @@ export default function ProfileDrawer({
 		return 'Active'
 	}, [conversation])
 	return (
-		<Transition.Root show={isOpen} as={Fragment}>
-			<Dialog as='div' className='relative z-50' onClose={onClose}>
-				<Transition.Child
-					as={Fragment}
-					enter='ease-out duration-500'
-					enterFrom='opacity-0'
-					enterTo='opacity-100'
-					leave='ease-in duration-500'
-					leaveFrom='opacity-100'
-					leaveTo='opacity-0'
+		<>
+			<ConfirmDeleteModal
+				isOpen={confirmOpen}
+				onClose={() => setConfirmOpen(false)}
+			/>
+			<Transition.Root show={isOpen} as={Fragment}>
+				<Dialog
+					as='div'
+					className='relative z-50'
+					onClose={onClose}
 				>
-					<div className='fixed inset-0 bg-black bg-opacity-40' />
-				</Transition.Child>
-				<div className='fixed inset-0 overflow-hidden'>
-					<div className='absolute inset-0 overflow-hidden'>
-						<div className='pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10'>
-							<Transition.Child
-								as={Fragment}
-								enter='transform transition ease-in-out duration-500'
-								enterFrom='translate-x-full'
-								enterTo='translate-x-0'
-								leave='transform transition ease-in-out duration-500'
-								leaveFrom='translate-x-0'
-								leaveTo='translate-x-full'
-							>
-								<Dialog.Panel className='pointer-events-auto w-screen max-w-md'>
-									<div className='flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl'>
-										<div className='px-4 sm:px-6'>
-											<div className='flex items-start justify-end'>
-												<div className='ml-3 flex h-7 items-center'>
-													<button
-														type='button'
-														className='rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
-														onClick={
-															onClose
-														}
-													>
-														<span className='sr-only'>
-															Close
-															panel
-														</span>
-														<IoClose
-															size={
-																24
+					<Transition.Child
+						as={Fragment}
+						enter='ease-out duration-500'
+						enterFrom='opacity-0'
+						enterTo='opacity-100'
+						leave='ease-in duration-500'
+						leaveFrom='opacity-100'
+						leaveTo='opacity-0'
+					>
+						<div className='fixed inset-0 bg-black bg-opacity-40' />
+					</Transition.Child>
+					<div className='fixed inset-0 overflow-hidden'>
+						<div className='absolute inset-0 overflow-hidden'>
+							<div className='pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10'>
+								<Transition.Child
+									as={Fragment}
+									enter='transform transition ease-in-out duration-500'
+									enterFrom='translate-x-full'
+									enterTo='translate-x-0'
+									leave='transform transition ease-in-out duration-500'
+									leaveFrom='translate-x-0'
+									leaveTo='translate-x-full'
+								>
+									<Dialog.Panel className='pointer-events-auto w-screen max-w-md'>
+										<div className='flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl'>
+											<div className='px-4 sm:px-6'>
+												<div className='flex items-start justify-end'>
+													<div className='ml-3 flex h-7 items-center'>
+														<button
+															type='button'
+															className='rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+															onClick={
+																onClose
 															}
-															aria-hidden='true'
-														/>
-													</button>
-												</div>
-											</div>
-										</div>
-										<div className='relative mt-6 flex-1 px-4 sm:px-6'>
-											<div className='flex flex-col items-center'>
-												<div className='mb-2'>
-													{conversation.isGroup ? (
-														<AvatarGroup
-															users={
-																conversation.users
-															}
-														/>
-													) : (
-														<Avatar
-															user={
-																otherUser
-															}
-														/>
-													)}
-												</div>
-												<div>{title}</div>
-												<div className='text-sm text-gray-500'>
-													{statusText}
-												</div>
-												<div className='flex gap-10 my-8'>
-													<div
-														onClick={() => {}}
-														className='flex flex-col gap-3 items-center cursor-pointer hover:opacity-75'
-													>
-														<div className='w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center'>
-															<IoTrash
+														>
+															<span className='sr-only'>
+																Close
+																panel
+															</span>
+															<IoClose
 																size={
-																	20
+																	24
 																}
+																aria-hidden='true'
 															/>
-														</div>
-														<div className='text-sm font-light text-neutral-600'>
-															Delete
-														</div>
+														</button>
 													</div>
 												</div>
-												<div className='w-full pb-5 pt-5 sm:px-0 sm:pt-0'>
-													<dl className='space-y-8 px-4 sm:space-y-6 sm:px-6'>
-														{conversation.isGroup && (
-															<div>
-																<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
-																	Emails
-																</dt>
-																<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
-																	{conversation.users
-																		.map(
-																			(
-																				user
-																			) =>
-																				user.email
-																		)
-																		.join(
-																			', '
-																		)}
-																</dd>
-															</div>
+											</div>
+											<div className='relative mt-6 flex-1 px-4 sm:px-6'>
+												<div className='flex flex-col items-center'>
+													<div className='mb-2'>
+														{conversation.isGroup ? (
+															<AvatarGroup
+																users={
+																	conversation.users
+																}
+															/>
+														) : (
+															<Avatar
+																user={
+																	otherUser
+																}
+															/>
 														)}
-														{!conversation.isGroup && (
-															<div>
-																<dt
-																	className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0
-                                '
-																>
-																	Email
-																</dt>
-																<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
-																	{
-																		otherUser.email
+													</div>
+													<div>
+														{title}
+													</div>
+													<div className='text-sm text-gray-500'>
+														{
+															statusText
+														}
+													</div>
+													<div className='flex gap-10 my-8'>
+														<button
+															onClick={() =>
+																setConfirmOpen(
+																	true
+																)
+															}
+															className='flex flex-col gap-3 items-center cursor-pointer hover:opacity-75'
+														>
+															<div className='w-10 h-10 bg-neutral-100 rounded-full flex items-center justify-center'>
+																<IoTrash
+																	size={
+																		20
 																	}
-																</dd>
+																/>
 															</div>
-														)}
-														{!conversation.isGroup && (
-															<>
-																<hr />
+															<div className='text-sm font-light text-neutral-600'>
+																Delete
+															</div>
+														</button>
+													</div>
+													<div className='w-full pb-5 pt-5 sm:px-0 sm:pt-0'>
+														<dl className='space-y-8 px-4 sm:space-y-6 sm:px-6'>
+															{conversation.isGroup && (
 																<div>
 																	<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
-																		Joined
+																		Emails
 																	</dt>
 																	<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
-																		<time
-																			dateTime={
-																				joinedDate
-																			}
-																		>
-																			{
-																				joinedDate
-																			}
-																		</time>
+																		{conversation.users
+																			.map(
+																				(
+																					user
+																				) =>
+																					user.email
+																			)
+																			.join(
+																				', '
+																			)}
 																	</dd>
 																</div>
-															</>
-														)}
-													</dl>
+															)}
+															{!conversation.isGroup && (
+																<div>
+																	<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
+																		Email
+																	</dt>
+																	<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
+																		{
+																			otherUser.email
+																		}
+																	</dd>
+																</div>
+															)}
+															{!conversation.isGroup && (
+																<>
+																	<hr />
+																	<div>
+																		<dt className='text-sm font-medium text-gray-500 sm:w-40 sm:flex-shrink-0'>
+																			Joined
+																		</dt>
+																		<dd className='mt-1 text-sm text-gray-900 sm:col-span-2'>
+																			<time
+																				dateTime={
+																					joinedDate
+																				}
+																			>
+																				{
+																					joinedDate
+																				}
+																			</time>
+																		</dd>
+																	</div>
+																</>
+															)}
+														</dl>
+													</div>
 												</div>
 											</div>
 										</div>
-									</div>
-								</Dialog.Panel>
-							</Transition.Child>
+									</Dialog.Panel>
+								</Transition.Child>
+							</div>
 						</div>
 					</div>
-				</div>
-			</Dialog>
-		</Transition.Root>
+				</Dialog>
+			</Transition.Root>
+		</>
 	)
 }
