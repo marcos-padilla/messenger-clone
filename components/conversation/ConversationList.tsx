@@ -3,11 +3,14 @@ import useConversation from '@/hooks/useConversation'
 import { FullConversationType } from '@/types'
 import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { MdOutlineGroupAdd } from 'react-icons/md'
 import ConversationBox from './ConversationBox'
 import GroupChatModal from '../modals/GroupChatModals'
 import { User } from '@prisma/client'
+import { pusherClient } from '@/libs/pusher'
+import { useSession } from 'next-auth/react'
+import { find } from 'lodash'
 
 interface ConversationListProps {
 	initialItems: FullConversationType[]
@@ -22,10 +25,79 @@ export default function ConversationList({
 }: ConversationListProps) {
 	const [items, setItems] = useState(initialItems)
 	const [isModalOpen, setIsModalOpen] = useState(false)
-
 	const router = useRouter()
-
+	const session = useSession()
 	const { conversationId, isOpen } = useConversation()
+
+	const pusherKey = useMemo(() => {
+		return session.data?.user?.email
+	}, [session.data?.user?.email])
+
+	useEffect(() => {
+		if (!pusherKey) {
+			return
+		}
+		pusherClient.subscribe(pusherKey)
+
+		const updateHandler = (conversation: FullConversationType) => {
+			if (
+				conversationId !== conversation.id &&
+				conversation.messages[0].seen[0].email !==
+					session?.data?.user?.email
+			) {
+				Notification.requestPermission().then((permission) => {
+					if (permission === 'granted') {
+						const notification = new Notification(
+							conversation.messages[0].seen[0].name!,
+							{
+								body:
+									conversation.messages[0].body ||
+									'Sent an image',
+							}
+						)
+						notification.onclick = () => {
+							router.push(
+								`/conversations/${conversation.id}`
+							)
+						}
+					}
+				})
+			}
+			setItems((prev) =>
+				prev.map((currentConversation) => {
+					if (currentConversation.id === conversation.id) {
+						return {
+							...currentConversation,
+							messages: conversation.messages,
+						}
+					}
+					return currentConversation
+				})
+			)
+		}
+
+		const newHandler = (conversation: FullConversationType) => {
+			setItems((prev) => {
+				if (find(prev, { id: conversation.id })) return prev
+				return [conversation, ...prev]
+			})
+		}
+
+		const removeHandler = (conversation: FullConversationType) => {
+			setItems((prev) => {
+				return [
+					...prev.filter(
+						(currentConversation) =>
+							currentConversation.id !== conversation.id
+					),
+				]
+			})
+		}
+
+		pusherClient.bind('conversation:update', updateHandler)
+		pusherClient.bind('conversation:new', newHandler)
+		pusherClient.bind('conversation:remove', removeHandler)
+	}, [pusherKey, router])
 
 	return (
 		<>

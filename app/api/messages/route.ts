@@ -65,9 +65,10 @@ export async function POST(request: Request) {
 			]
 
 		updatedConversation.users.map((user) => {
-			pusherServer.trigger(user.email!, 'conversation:updata', {
+			pusherServer.trigger(user.email!, 'conversation:update', {
 				id: conversationId,
 				messages: [lastMessage],
+				/* sender: currentUser, */
 			})
 		})
 
