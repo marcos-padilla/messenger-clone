@@ -1,8 +1,9 @@
 import prisma from '@/libs/prismadb'
+import { FullMessageType } from '@/types'
 
 export default async function getMessages(conversationId: string) {
 	try {
-		const messages = await prisma.message.findMany({
+		const messages: FullMessageType[] = await prisma.message.findMany({
 			where: {
 				conversationId,
 			},

@@ -28,6 +28,7 @@ export default function ConversationBox({
 
 	const lastMessage = useMemo(() => {
 		const messages = conversation.messages || []
+
 		return messages[messages.length - 1]
 	}, [conversation.messages])
 
