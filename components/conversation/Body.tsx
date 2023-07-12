@@ -39,7 +39,12 @@ export default function Body({ initialMessages }: BodyProps) {
 
 		const updateMessageHandler = (newMessage: FullMessageType) => {}
 		pusherClient.bind('messages:new', messageHandler)
-	})
+
+		return () => {
+			pusherClient.unsubscribe(conversationId)
+			pusherClient.unbind('messages:new', messageHandler)
+		}
+	}, [conversationId])
 
 	return (
 		<div className='flex-1 overflow-y-auto'>
